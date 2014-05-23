@@ -24,6 +24,7 @@ namespace znn {
 class parallel_network_layer
 {
 public:
+    virtual ~parallel_network_layer() {};
     virtual void run_forward(size_t) = 0;
     virtual void run_backward(size_t, cube<double>&) = 0;
 };
@@ -239,7 +240,7 @@ class parallel_network
 {
 private:
     typedef parallel_network_layer_direct<parallel_network> layer_type;
-    typedef std::unique_ptr<layer_type>                     layer_ptr ;
+    typedef std::unique_ptr<parallel_network_layer>         layer_ptr ;
     typedef std::vector<cube<double>>                       cubes_type;
 
 private:
@@ -324,7 +325,11 @@ public:
 
         waiter_.wait();
 
-        net_.apply_grads_serial();
+    }
+
+    void grad_update()
+    {
+        net_.apply_grads();
     }
 
     void forward_done(size_t l, size_t p)

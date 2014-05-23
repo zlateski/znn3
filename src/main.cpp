@@ -208,7 +208,8 @@ int main()
     net1.add_layer(10,vec3s(9,9,1),0.01);
     net1.add_layer(10,vec3s(9,9,1),0.01);
     net1.add_layer(10,vec3s(9,9,1),0.01);
-    net1.add_layer(10,vec3s(4,4,1),0.002);
+    net1.add_layer(10,vec3s(4,4,1),0.01);
+    //net1.add_layer(50,vec3s(1,1,1),0.002);
 
     //simple_network snet(net1, make_transfer_fn<hyperbolic_tangent>());
 
@@ -302,6 +303,13 @@ int main()
         snet.backward(guess);
 
         //std::cout << "BWD IN: " << wt.elapsed<double>() << std::endl;
+
+        wt.reset();
+
+        snet.grad_update();
+
+        //std::cout << "GRAD IN: " << wt.elapsed<double>() << std::endl;
+
 
     }
 

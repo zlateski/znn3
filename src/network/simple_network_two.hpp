@@ -23,9 +23,6 @@ private:
     layered_network_data& net_;
     transfer_fn           transfer_fn_;
 
-    std::vector<cubes_type>                               feature_maps_ ;
-    std::vector<std::reference_wrapper<const cubes_type>> ifeature_maps_;
-
 private:
     void forward_layer(std::size_t l)
     {
@@ -93,8 +90,6 @@ private:
                 }
             }
         }
-
-        ifeature_maps_.pop_back();
     }
 
 public:

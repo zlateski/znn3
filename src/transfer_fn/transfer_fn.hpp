@@ -15,6 +15,8 @@ namespace znn {
 class transfer_fn_interface
 {
 public:
+    virtual ~transfer_fn_interface() {};
+
     virtual void apply_grad( cube<double>& /* dEdF */,
                              const cube<double>& /* F */) const = 0;
 
