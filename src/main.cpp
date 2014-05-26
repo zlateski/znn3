@@ -6,6 +6,11 @@
 #include <functional>
 #include <zi/time.hpp>
 
+
+#include "pooling/pooling_filter_2x2.hpp"
+#include "core/tube_iterator.hpp"
+#include "pooling/pooling_filter.hpp"
+
 #include "core/types.hpp"
 #include "core/diskio.hpp"
 #include "core/waiter.hpp"
@@ -72,29 +77,21 @@ int main()
 
     {
 
-        auto a = pool<double>::get_unique(4,4,4);
-        a->randu();
+        auto v = pool<double>::get_unique(4,4,4);
+        v->randu();
 
-        auto b = pool<double>::get_unique(3,3,3);
-        b->randu();
+        auto r = pooling_filter_2x2(*v, std::greater<double>());
 
-        auto r1 = convolve_flipped(*a,*b);
+        std::cout << *v << std::endl;
+        std::cout << *r.first << std::endl;
+        std::cout << *r.second << std::endl;
 
-        std::cout << *r1 << std::endl;
+        auto b = pooling_filter_2x2_undo( *r.first, *r.second );
 
-        flip_dims(*a);
-        //flip_dims(*b);
-
-        auto r2 = convolve(*a,*b);
-
-        std::cout << *r2 << std::endl;
-
-        std::cout << (*r2 - *r1) << std::endl;
-
+        std::cout << *v - *b << std::endl;
 
 
     }
-
     return 0;
 
     zi::async::set_concurrency(16);

@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <algorithm>
 #include "types.hpp"
+#include "cube_pool.hpp"
 
 namespace zi {
 namespace znn {
@@ -62,6 +63,24 @@ inline void flip_dims(cube<T>& c)
         }
     }
 
+}
+
+template<typename T>
+inline void fill_indices(cube<T>& c)
+{
+    T  idx = 0;
+    T* mem = c.memptr();
+
+    for ( size_t i = 0; i < c.n_elem; ++i, ++idx )
+        mem[i] = idx;
+}
+
+template<typename T>
+inline unique_cube<T> crop(cube<T>& c, const vec3s& s)
+{
+    unique_cube<T> ret = pool<T>::get(s);
+    *ret = c.subcube(0,0,0,s[0]-1,s[1]-1,s[2]-1);
+    return ret;
 }
 
 }} // namespace zi::znn

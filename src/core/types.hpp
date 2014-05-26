@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <mutex>
 #include <memory>
+#include <zi/assert.hpp>
 
 #include <zi/vl/vl.hpp>
 
