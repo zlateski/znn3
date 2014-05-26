@@ -34,4 +34,7 @@ typedef std::size_t size_t;
 
 typedef std::unique_lock<std::mutex> guard;
 
+template<typename T>
+struct identity { typedef T type; };
+
 }} // namespace zi::znn

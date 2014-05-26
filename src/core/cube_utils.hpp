@@ -36,4 +36,32 @@ inline vec3s size(const cube<T>& c)
     return vec3s(c.n_rows, c.n_cols, c.n_slices);
 }
 
+template<typename T>
+inline void flip_dims(cube<T>& c)
+{
+    for ( size_t z = 0; z < c.n_slices/2; ++z )
+        for ( size_t y = 0; y < c.n_cols; ++y )
+            for ( size_t x = 0; x < c.n_rows; ++x )
+                std::swap(c(x,y,z),
+                          c(c.n_rows-1-x,c.n_cols-1-y,c.n_slices-1-z));
+
+    if ( c.n_slices % 2 )
+    {
+        size_t z = c.n_slices / 2 + 1;
+        for ( size_t y = 0; y < c.n_cols/2; ++y )
+            for ( size_t x = 0; x < c.n_rows; ++x )
+                std::swap(c(x,y,z),
+                          c(c.n_rows-1-x,c.n_cols-1-y,c.n_slices-1-z));
+
+        if ( c.n_cols % 2 )
+        {
+            size_t y = c.n_cols / 2 + 1;
+            for ( size_t x = 0; x < c.n_rows; ++x )
+                std::swap(c(x,y,z),
+                          c(c.n_rows-1-x,c.n_cols-1-y,c.n_slices-1-z));
+        }
+    }
+
+}
+
 }} // namespace zi::znn

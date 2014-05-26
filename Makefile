@@ -1,7 +1,7 @@
 ODIR		=	./bin
 CPP		=	g++-4.8
 INC_FLAGS	=	-I. -I./src
-OPT_FLAGS	=	-DARMA_NO_DEBUG -DNDEBUG -O3 -DARMA_USE_CXX11 -DARMA_USE_CXX11_RNG
+OPT_FLAGS	=	-DARMA_USE_CXX11 -DARMA_USE_CXX11_RNG
 OTH_FLAGS	=	-Wall -Wextra -std=c++11
 
 LIBS		=	 -llapack -lblas -larmadillo -lfftw3 -lpthread -lrt

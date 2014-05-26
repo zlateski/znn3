@@ -16,6 +16,9 @@
 #include "network/parallel_network.hpp"
 #include "transfer_fn/transfer_fn.hpp"
 
+#include "convolution/sparse_convolve.hpp"
+#include "convolution/constant_convolve.hpp"
+
 //#include "core/concept.hpp"
 
 //CONCEPT_IS_CALLABLE(push_back);
@@ -66,6 +69,33 @@ void report(waiter& w)
 
 int main()
 {
+
+    {
+
+        auto a = pool<double>::get_unique(4,4,4);
+        a->randu();
+
+        auto b = pool<double>::get_unique(3,3,3);
+        b->randu();
+
+        auto r1 = convolve_flipped(*a,*b);
+
+        std::cout << *r1 << std::endl;
+
+        flip_dims(*a);
+        //flip_dims(*b);
+
+        auto r2 = convolve(*a,*b);
+
+        std::cout << *r2 << std::endl;
+
+        std::cout << (*r2 - *r1) << std::endl;
+
+
+
+    }
+
+    return 0;
 
     zi::async::set_concurrency(16);
 
@@ -223,6 +253,9 @@ int main()
     double sqerr = 0;
     double clerr = 0;
     int iter = 0;
+
+
+    std::cout << "FOV: " << net1.fov() << "\n";
 
     for (;;)
     {

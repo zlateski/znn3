@@ -57,12 +57,12 @@ private:
 
     void apply_grad(size_t layer, size_t j, waiter& w)
     {
-        ZI_ASSERT(layer_data_[layer].dEdW[i][j]);
-
         bias(layer,j) -= learning_rate(layer) * dEdB(layer,j);
 
         for ( size_t i = 0; i < layer_data_[layer].dEdW.size(); ++i )
         {
+            ZI_ASSERT(layer_data_[layer].dEdW[i][j]);
+
             *dEdW(layer,i,j) *= learning_rate(layer);
             filter(layer,i,j) -= *dEdW(layer,i,j);
         }

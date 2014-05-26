@@ -159,6 +159,19 @@ public:
         return layers_[l].filter(i,j);
     }
 
+    vec3s fov( size_t at_layer = 0 ) const
+    {
+        if ( at_layer >= layers_.size() )
+        {
+            return vec3s::one;
+        }
+
+        vec3s out_fov = fov(at_layer+1);
+
+        return out_fov * layers_[at_layer].pooling_size()
+            + layers_[at_layer].filter_size() - vec3s::one;
+    }
+
 }; // class layered_network
 
 }} // namespace zi::znn

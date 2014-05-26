@@ -192,6 +192,11 @@ public:
         return instance.get_unique( vec3s(x,y,z) );
     }
 
+    static unique_cube<T> get_unique_zero( size_t x, size_t y, size_t z )
+    {
+        return get_unique_zero(vec3s(x,y,z));
+    }
+
     static unique_cube<T> get_unique_copy( const cube<T>& c )
     {
         unique_cube<T> ret = get_unique( c.n_rows, c.n_cols, c.n_slices );
