@@ -7,6 +7,7 @@
 #include <zi/time.hpp>
 
 //#include "core/fft.hpp"
+#include "frontiers/training_cube.hpp"
 
 #include "pooling/pooling_filter_2.hpp"
 #include "core/tube_iterator.hpp"
@@ -41,13 +42,122 @@ std::vector<cube<double>> labels[60000];
 
 int main()
 {
+    zi::async::set_concurrency(16);
 
     {
 
-        // auto a = pool<double>::get_unique(4,4,4);
-        // a->randu();
+        frontiers::training_cube tc("/data/home/zlateski/uygar/data_24Jan2014/confocal47",
+                                    vec3s(25,25,7), vec3s(13,13,3));
 
-        // auto b1 = pool<double>::get_unique(1,1,1);
+        frontiers::sample s = tc.get_sample();
+
+
+        layered_network net1(1); // 28
+        net1.add_layer(8,vec3s(5,5,1),0.001); // 11,11,3
+        net1.add_layer(8,vec3s(3,3,3),0.001); // 7,7,3
+        net1.add_layer(8,vec3s(5,5,1),0.001); // 5,5,1
+        net1.add_layer(1,vec3s(3,3,3),0.001); // 7,7,3
+
+        layered_network_data nld(net1);
+        parallel_network snet(nld, make_transfer_fn<sigmoid>());
+
+        double clerr= 0;
+        double err  = 0;
+        int    iter = 0;
+
+        while (1)
+        {
+            frontiers::sample s = tc.get_sample();
+
+            std::vector<cube<double>> input;
+            input.push_back(s.image);
+
+
+            std::vector<cube<double>> guess
+                = snet.forward(input);
+
+
+            std::vector<cube<double>> grad(1);
+
+
+            grad[0] = guess[0];
+
+            for ( size_t z = 0; z < grad[0].n_slices; ++z )
+                for ( size_t y = 0; y < grad[0].n_cols; ++y )
+                    for ( size_t x = 0; x < grad[0].n_rows; ++x )
+                    {
+                        if ( s.mask(x,y,z) )
+                        {
+                            grad[0](x,y,z) = guess[0](x,y,z) - s.label(x,y,z);
+                            grad[0](x,y,z) *= 2;
+                            ++iter;
+
+                            if ( s.label(x,y,z) )
+                            {
+                                grad[0](x,y,z) *= s.w_pos;
+                                double e = guess[0](x,y,z) - s.label(x,y,z);
+                                err += e*e*s.w_pos;
+                                if ( guess[0](x,y,z) < 0.5 )
+                                    clerr += s.w_pos;
+                            }
+                            else
+                            {
+                                grad[0](x,y,z) *= s.w_neg;
+                                double e = guess[0](x,y,z) - s.label(x,y,z);
+                                err += e*e*s.w_neg;
+                                if ( guess[0](x,y,z) >= 0.5 )
+                                    clerr += s.w_neg;
+                            }
+                        }
+                        else
+                        {
+                            grad[0](x,y,z) = 0;
+                        }
+                    }
+
+            if ( iter > 50000 )
+            {
+                std::cout << "CL: " << (clerr/iter) << std::endl;
+                std::cout << "SQ: " << (err/iter) << std::endl;
+                iter = 0;
+                err = 0;
+                clerr = 0;
+            }
+
+            snet.backward(grad);
+            snet.grad_update();
+
+
+            //std::cout << guess[0] << "\n";
+        }
+
+
+
+    //net1.add_layer(10,vec3s(2,2,1),0.01); // 1
+    //net1.add_layer(50,vec3s(1,1,1),0.002);
+
+    //simple_network snet(net1, make_transfer_fn<sigmoid>());
+
+
+
+        //cube<char>;
+        //delete c;
+
+        auto a = pool<bool>::get_unique(4,4,4);
+        a->randu();
+
+        std::ofstream o("test.bool");
+        io::write(o, *a);
+
+        // auto b1 = pool<double>::get_unique(4,4,4);
+        // b1->randu();
+
+        // *b1 *= 2;
+
+        // *a = *b1;
+
+        // std::cout << *a;
+
         // (*b1)(0,0,0) = 0.2;
 
         // auto b2 = pool<double>::get_unique_zero(4,4,4);
@@ -83,7 +193,6 @@ int main()
     }
     //return 0;
 
-    zi::async::set_concurrency(16);
 
 
     std::ifstream flabels("/data/home/zlateski/labels.raw");
