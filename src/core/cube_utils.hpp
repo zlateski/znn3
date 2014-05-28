@@ -48,7 +48,7 @@ inline void flip_dims(cube<T>& c)
 
     if ( c.n_slices % 2 )
     {
-        size_t z = c.n_slices / 2 + 1;
+        size_t z = c.n_slices / 2;
         for ( size_t y = 0; y < c.n_cols/2; ++y )
             for ( size_t x = 0; x < c.n_rows; ++x )
                 std::swap(c(x,y,z),
@@ -56,8 +56,8 @@ inline void flip_dims(cube<T>& c)
 
         if ( c.n_cols % 2 )
         {
-            size_t y = c.n_cols / 2 + 1;
-            for ( size_t x = 0; x < c.n_rows; ++x )
+            size_t y = c.n_cols / 2;
+            for ( size_t x = 0; x < c.n_rows/2; ++x )
                 std::swap(c(x,y,z),
                           c(c.n_rows-1-x,c.n_cols-1-y,c.n_slices-1-z));
         }
@@ -78,9 +78,61 @@ inline void fill_indices(cube<T>& c)
 template<typename T>
 inline unique_cube<T> crop(cube<T>& c, const vec3s& s)
 {
-    unique_cube<T> ret = pool<T>::get(s);
+    unique_cube<T> ret = pool<T>::get_unique(s);
     *ret = c.subcube(0,0,0,s[0]-1,s[1]-1,s[2]-1);
     return ret;
+}
+
+template<typename T>
+inline void sparse_explode(const cube<T>& in, cube<T>& out,
+                           const vec3s& s)
+{
+    for ( size_t z = 0, zout = 0; z < in.n_slices; ++z, zout += s[2] )
+        for ( size_t y = 0, yout = 0; y < in.n_cols; ++y, yout += s[1] )
+            for ( size_t x = 0, xout = 0; x < in.n_rows; ++x, xout += s[0] )
+                out(xout,yout,zout) = in(x,y,z);
+}
+
+template<typename T>
+inline unique_cube<T> sparse_implode_flip(const cube<T>& in,
+                                          const vec3s& sz,
+                                          const vec3s& sp)
+{
+    unique_cube<T> r = pool<T>::get_unique(sz);
+    for ( size_t z = 0, zin = in.n_slices-1; z < sz[2]; ++z, zin -= sp[2] )
+        for ( size_t y = 0, yin = in.n_cols-1; y < sz[1]; ++y, yin -= sp[1] )
+            for ( size_t x = 0, xin = in.n_rows-1; x < sz[0]; ++x, xin -= sp[0] )
+                (*r)(x,y,z) = in(xin, yin, zin);
+    return r;
+}
+
+template<typename T>
+inline unique_cube<T> crop_right( const cube<T>& in, const vec3s& s )
+{
+    auto r = pool<T>::get_unique(s);
+    vec3s b = size(in) - s;
+    *r = in.subcube(b[0], b[1], b[2], b[0]+s[0]-1, b[1]+s[1]-1, b[2]+s[2]-1);
+    return r;
+}
+
+template<typename T>
+inline unique_cube<T> expand( const cube<T>& in, const vec3s& s )
+{
+    auto r = pool<T>::get_unique_zero(s);
+    vec3s b = size(in);
+    r->subcube(0,0,0,b[0]-1,b[1]-1,b[2]-1) = in;
+    return r;
+}
+
+template<typename T>
+inline void pairwise_mult( cube<T>& a, const cube<T>& b )
+{
+    ZI_ASSERT(a.n_elem==b.n_elem);
+    T* ap = a.memptr();
+    const T* bp = b.memptr();
+
+    for ( size_t i = 0; i < a.n_elem; ++i )
+        ap[i] *= bp[i];
 }
 
 }} // namespace zi::znn

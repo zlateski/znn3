@@ -162,6 +162,12 @@ public:
         }
     }
 
+    void grad_update()
+    {
+        //net_.apply_grads_serial();
+    }
+
+
 }; // class simple_network
 
 }} // namespace zi::znn

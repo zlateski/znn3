@@ -6,8 +6,9 @@
 #include <functional>
 #include <zi/time.hpp>
 
+//#include "core/fft.hpp"
 
-#include "pooling/pooling_filter_2x2.hpp"
+#include "pooling/pooling_filter_2.hpp"
 #include "core/tube_iterator.hpp"
 #include "pooling/pooling_filter.hpp"
 
@@ -32,103 +33,58 @@ namespace arma {
 thread_local arma_rng_cxx11 arma_rng_cxx11_instance;
 }
 
-
-
-struct perax
-{
-    perax()
-    {
-        std::cout << "PERA!" << std::endl;
-    };
-
-    void print(const std::string& what)
-    {
-        std::cout << what << std::endl;
-    }
-};
-
-thread_local perax px;
-
-void nada()
-{
-    px.print("nada");
-}
-
 using namespace zi::znn;
-
 
 cube<double> images[60000];
 std::vector<cube<double>> labels[60000];
 
-void deleter(int* x)
-{
-    std::cout << "DELETE: " << *x << "\n";
-    delete x;
-}
-
-void report(waiter& w)
-{
-    std::cout << "Reporting" << std::endl;
-    w.one_done();
-}
 
 int main()
 {
 
     {
 
-        auto v = pool<double>::get_unique(4,4,4);
-        v->randu();
+        // auto a = pool<double>::get_unique(4,4,4);
+        // a->randu();
 
-        auto r = pooling_filter_2x2(*v, std::greater<double>());
+        // auto b1 = pool<double>::get_unique(1,1,1);
+        // (*b1)(0,0,0) = 0.2;
 
-        std::cout << *v << std::endl;
-        std::cout << *r.first << std::endl;
-        std::cout << *r.second << std::endl;
+        // auto b2 = pool<double>::get_unique_zero(4,4,4);
+        // (*b2)(0,0,0) = 0.2;
 
-        auto b = pooling_filter_2x2_undo( *r.first, *r.second );
+        // auto rd = convolve_flipped(*a,*b1);
 
-        std::cout << *v - *b << std::endl;
+        // auto afft = fftw::forward(*a);
+        // auto bfft = fftw::forward(*b2);
 
+        // pairwise_mult(*afft,*bfft);
+
+        // auto rf = fftw::backward(*afft,vec3s(4,4,4));
+
+        // *rf /= 64;
+
+        // std::cout << *rd << std::endl;
+        // std::cout << *rf << std::endl;
+
+
+        // auto f = fftw::forward(*v);
+        // auto b = fftw::backward(*f, size(*v));
+
+        // auto s = size(*v);
+
+        // *b /= ( s[0] * s[1] * s[2] );
+
+
+
+
+        // std::cout << *v - *b << "\n";
 
     }
-    return 0;
+    //return 0;
 
     zi::async::set_concurrency(16);
 
-    //std::unique_ptr<int,decltype(dtr)>(new int(3), dtr);
-
-    unique_cube<double> uc;
-
-    if ( uc )
-    {
-        std::cout << "UCCCCCCC\n";
-    }
-
-    unique_cube<double> wc = pool<double>::get_unique(1,2,3);
-
-    uc = std::move(wc);
-
-    if ( uc )
-    {
-        std::cout << "UCCCCCCC\n";
-    }
-
-    if ( !wc )
-    {
-        std::cout << "!WCCCC\n";
-    }
-
-    std::cout << std::endl;
-
-    {
-        auto la = pool<double>::get_unique(1,2,3);
-        la->fill(5);
-    }
-
-    std::cout << (*(pool<double>::get_unique(1,2,3))) << "\n";
-
-    //return 0;
 
     std::ifstream flabels("/data/home/zlateski/labels.raw");
     uint32_t magic = io::read<uint32_t>(flabels);
@@ -178,72 +134,20 @@ int main()
     }
 
 
-    px.print("init");
-    std::stringstream ss;
-    int x = 3;
-    int y = 0;
-
-    io::write(ss, x);
-    y = io::read<int>(ss);
-
-    std::cout << y << "\n";
-
-    x = 4;
-    io::write(ss, x);
-    y = io::read<int>(ss);
-    std::cout << y << "\n";
-
-    vec3s v0(1,2,3);
-    vec3s v1;
-
-    io::write(ss, v0);
-
-
-    cube<double> c1(3,3,3); c1.fill(1);
-    cube<double> c2(3,3,3);
-
-    io::write(ss,c1);
-
-    io::read(ss, v1);
-
-    io::read(ss, c2);
-
-
-    std::cout << v1 << "\n";
-    std::cout << c2 << "\n";
-
-
-
-    network_layer n1(3,3,vec3s(3,3,3),vec3s(1,1,1),3);
-    std::stringstream s;
-    n1.write(s);
-    network_layer n2(s);
-    network_layer n3(3,3,vec3s(3,3,3),vec3s(1,1,1),3);
-
-    std::cout << "EQ? " << (n1==n2) << std::endl;
-    std::cout << "EQ? " << (n1==n3) << std::endl;
-
-    network_layer n4;
-    std::cout << "EX? " << static_cast<bool>(n4) << std::endl;
-
-    n4 = std::move(n2);
-    std::cout << "EQ? " << (n1==n4) << std::endl;
-
-    std::cout << "EX? " << static_cast<bool>(n2) << std::endl;
-
-    layered_network net1(1);
-    net1.add_layer(10,vec3s(9,9,1),0.01);
-    net1.add_layer(10,vec3s(9,9,1),0.01);
-    net1.add_layer(10,vec3s(9,9,1),0.01);
-    net1.add_layer(10,vec3s(4,4,1),0.01);
+    layered_network net1(1); // 28
+    net1.add_layer(10,vec3s(9,9,1),vec3s(1,1,1),0.01); // 28
+    net1.add_layer(10,vec3s(9,9,1),0.01); // 20
+    net1.add_layer(10,vec3s(9,9,1),0.01); // 12
+    net1.add_layer(10,vec3s(4,4,1),0.01); // 4
+    //net1.add_layer(10,vec3s(2,2,1),0.01); // 1
     //net1.add_layer(50,vec3s(1,1,1),0.002);
 
-    //simple_network snet(net1, make_transfer_fn<hyperbolic_tangent>());
+    //simple_network snet(net1, make_transfer_fn<sigmoid>());
 
     layered_network_data nld(net1);
 
 
-    simple_network_two asnet(nld, make_transfer_fn<sigmoid>());
+    //simple_network_two snet(nld, make_transfer_fn<sigmoid>());
 
     parallel_network snet(nld, make_transfer_fn<sigmoid>());
 
@@ -269,12 +173,11 @@ int main()
         std::vector<cube<double>> guess
             = snet.forward(input);
 
-        //std::cout << "FWD IN: " << wt.elapsed<double>() << std::endl;
 
 
         // std::cout << "GUESS: ";
         // for ( const auto& a: guess ) std::cout << ' ' << a(0,0,0);
-        // std::cout << "\nLABEL: ";
+        // std::cout << "\n\tLABEL: ";
         // for ( const auto& l: labels[sample_no] ) std::cout << ' ' << l(0,0,0);
         // std::cout << std::endl;
 
@@ -301,6 +204,7 @@ int main()
 
         //guess[mind] *= 100;
 
+        //std::cout << "FWD IN: " << wt.elapsed<double>() << std::endl;
 
         //std::cout << guess[0](0,0,0) << ' ' << label << std::endl;
 
@@ -329,6 +233,7 @@ int main()
         // std::cout << "ERRRRR: " << guess[0](0,0,0) << "\n";
 
         wt.reset();
+
 
         snet.backward(guess);
 

@@ -19,8 +19,8 @@ public:
 private:
     std::size_t n_inputs_     = 0;
     std::size_t n_outputs_    = 0;
-    vec3s       filter_size_  ;
-    vec3s       pooling_size_ ;
+    vec3s       filter_size_  = vec3s::one;
+    vec3s       pooling_size_ = vec3s::one;
     double      learning_rate_;
 
     std::vector<std::vector<cube<double>>> filters_;

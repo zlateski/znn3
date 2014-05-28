@@ -204,6 +204,13 @@ public:
         return ret;
     }
 
+    static unique_cube<T> get_unique_crop( const cube<T>& c, const vec3s& s )
+    {
+        unique_cube<T> ret = get_unique(s);
+        *ret = c.subcube(0,0,0,s[0]-1,s[1]-1,s[2]-1);
+        return ret;
+    }
+
     // Actually private - don't use
 
     static void return_cube( cube<T>* c )

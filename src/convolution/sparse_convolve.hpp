@@ -103,28 +103,25 @@ inline void sparse_convolve_flipped_add(const cube<T>& a, const cube<T>& b,
     size_t by = b.n_cols;
     size_t bz = b.n_slices;
 
-    size_t rbx = (bx-1) * s[0] + 1;
-    size_t rby = (by-1) * s[1] + 1;
-    size_t rbz = (bz-1) * s[2] + 1;
-
-    size_t rx = ax - rbx + 1;
-    size_t ry = ay - rby + 1;
-    size_t rz = az - rbz + 1;
+    size_t rx = (ax - bx) / s[0] + 1;
+    size_t ry = (ay - by) / s[1] + 1;
+    size_t rz = (az - bz) / s[2] + 1;
 
     ZI_ASSERT(r.n_rows==rx);
     ZI_ASSERT(r.n_cols==ry);
     ZI_ASSERT(r.n_slices==rz);
 
-    for ( size_t z = 0; z < rz; ++z )
-        for ( size_t y = 0; y < ry; ++y )
-            for ( size_t x = 0; x < rx; ++x )
+    for ( size_t qz = 0, z = 0; qz < rz; ++qz, z += s[2] )
+        for ( size_t qy = 0, y = 0; qy < ry; ++qy, y += s[1] )
+            for ( size_t qx = 0, x = 0; qx < rx; ++qx, x += s[0] )
             {
-                for ( size_t dz = 0, wz = bz - 1; dz < rbz; dz += s[2], --wz )
-                    for ( size_t dy = 0, wy = by - 1; dy < rby; dy += s[1], --wy )
-                        for ( size_t dx = 0, wx = bx - 1; dx < rbx; dx += s[0], --wx )
+                for ( size_t dz = 0; dz < bz; ++dz )
+                    for ( size_t dy = 0; dy < by; ++dy )
+                        for ( size_t dx = 0; dx < bx; ++dx )
                         {
-                            r(x,y,z) +=
-                                a(ax-1-x-dx,ay-1-y-dy,az-1-z-dz) * b(wx,wy,wz);
+                            r(qx,qy,qz) +=
+                                a(ax-1-x-dx,ay-1-y-dy,az-1-z-dz) *
+                                b(bx-1-dx,by-1-dy,bz-1-dz);
                         }
             }
 }
@@ -154,10 +151,9 @@ inline unique_cube<T> sparse_convolve_flipped(const cube<T>& a,
         return convolve_flipped(a,b);
     }
 
-    vec3s ws = size(b);
-    ws = (ws - vec3s::one) * s + vec3s::one;
+    vec3s ws = (size(a) - size(b)) / s + vec3s::one;
 
-    unique_cube<T> r = pool<T>::get_unique(vec3s::one + size(a) - ws);
+    unique_cube<T> r = pool<T>::get_unique(ws);
 
     sparse_convolve_flipped(a,b,s,*r);
     return r;

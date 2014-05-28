@@ -105,6 +105,12 @@ public:
         return layers_[n];
     }
 
+    const network_layer& layer(std::size_t n) const
+    {
+        ZI_ASSERT(n<layers_.size());
+        return layers_[n];
+    }
+
     bool operator==(const layered_network& oth) const
     {
         if ( (n_inputs_ != oth.n_inputs_) ||

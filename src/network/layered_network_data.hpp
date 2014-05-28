@@ -19,6 +19,7 @@ private:
         std::vector<unique_cube<double>>               featuremaps;
         std::vector<double>                            dEdB;
         std::vector<std::vector<unique_cube<double>>>  dEdW;
+        std::vector<vec3s>                             sparseness;
     };
 
 private:
@@ -125,6 +126,16 @@ public:
     cube<double>& filter(std::size_t l, std::size_t i, std::size_t j)
     {
         return network_.layer(l).filter(i,j);
+    }
+
+    const vec3s& filter_size(size_t l) const
+    {
+        return network_.layer(l).filter_size();
+    }
+
+    const vec3s& pooling_size(size_t l) const
+    {
+        return network_.layer(l).pooling_size();
     }
 
     double learning_rate(size_t l) const
