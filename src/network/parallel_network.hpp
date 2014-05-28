@@ -671,9 +671,9 @@ public:
     {
         for ( size_t i = 0; i < layers_.size(); ++i )
         {
-            if ( i % 2 )
-                layers_[i] = layer_ptr(new direct_layer_type(*this, i));
-            else
+            // if ( i % 2 )
+            //     layers_[i] = layer_ptr(new direct_layer_type(*this, i));
+            // else
                 layers_[i] = layer_ptr(new fft_layer_type(*this, i));
         }
         layers_[0]->init(vec3s::one);
