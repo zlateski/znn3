@@ -8,6 +8,8 @@
 
 //#include "core/fft.hpp"
 #include "frontiers/training_cube.hpp"
+#include "frontiers/square_loss.hpp"
+#include "frontiers/utility.hpp"
 
 #include "pooling/pooling_filter_2.hpp"
 #include "core/tube_iterator.hpp"
@@ -45,18 +47,44 @@ int main()
     zi::async::set_concurrency(16);
 
     {
+        std::ifstream netf("frontiers_net");
 
-        frontiers::training_cube tc("/data/home/zlateski/uygar/data_24Jan2014/confocal47",
-                                    vec3s(25,25,7), vec3s(13,13,3));
+        layered_network net1(netf); // 28
+        layered_network_data nld(net1);
+        parallel_network snet(nld, make_transfer_fn<sigmoid>());
+
+        frontiers::process_whole_cube("/data/home/zlateski/uygar/test/confocal12",
+                                      "12", snet, 64);
+
+        return 0;
+    }
+
+
+    {
+
+        std::vector<size_t> cells{56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72};
+
+        frontiers::training_cubes tc
+            ("/data/home/zlateski/uygar/data_24Jan2014/confocal", cells,
+                                    vec3s(30,30,7), vec3s(18,18,3));
 
         frontiers::sample s = tc.get_sample();
 
 
         layered_network net1(1); // 28
-        net1.add_layer(8,vec3s(5,5,1),0.001); // 11,11,3
-        net1.add_layer(8,vec3s(3,3,3),0.001); // 7,7,3
-        net1.add_layer(8,vec3s(5,5,1),0.001); // 5,5,1
-        net1.add_layer(1,vec3s(3,3,3),0.001); // 7,7,3
+
+        std::ifstream sn("my_net2");
+        // if ( sn )
+        // {
+        //     net1.read(sn);
+        // }
+        // else
+        {
+            net1.add_layer(25,vec3s(5,5,1),0.00001); // 13,13,5
+            net1.add_layer(25,vec3s(3,3,3),0.00001); // 9,9,5
+            net1.add_layer(25,vec3s(5,5,1),0.00001); // 7,7,3
+            net1.add_layer(1,vec3s(3,3,3),0.00001); // 3,3,3
+        }
 
         layered_network_data nld(net1);
         parallel_network snet(nld, make_transfer_fn<sigmoid>());
@@ -79,49 +107,25 @@ int main()
 
             std::vector<cube<double>> grad(1);
 
+            auto x = frontiers::square_loss(s, guess[0]);
 
-            grad[0] = guess[0];
 
-            for ( size_t z = 0; z < grad[0].n_slices; ++z )
-                for ( size_t y = 0; y < grad[0].n_cols; ++y )
-                    for ( size_t x = 0; x < grad[0].n_rows; ++x )
-                    {
-                        if ( s.mask(x,y,z) )
-                        {
-                            grad[0](x,y,z) = guess[0](x,y,z) - s.label(x,y,z);
-                            grad[0](x,y,z) *= 2;
-                            ++iter;
+            grad[0] = std::move(std::get<3>(x));
 
-                            if ( s.label(x,y,z) )
-                            {
-                                grad[0](x,y,z) *= s.w_pos;
-                                double e = guess[0](x,y,z) - s.label(x,y,z);
-                                err += e*e*s.w_pos;
-                                if ( guess[0](x,y,z) < 0.5 )
-                                    clerr += s.w_pos;
-                            }
-                            else
-                            {
-                                grad[0](x,y,z) *= s.w_neg;
-                                double e = guess[0](x,y,z) - s.label(x,y,z);
-                                err += e*e*s.w_neg;
-                                if ( guess[0](x,y,z) >= 0.5 )
-                                    clerr += s.w_neg;
-                            }
-                        }
-                        else
-                        {
-                            grad[0](x,y,z) = 0;
-                        }
-                    }
+            iter += std::get<0>(x);
+            err  += std::get<1>(x);
+            clerr+= std::get<2>(x);
 
-            if ( iter > 50000 )
+
+            if ( iter > 100000 )
             {
                 std::cout << "CL: " << (clerr/iter) << std::endl;
                 std::cout << "SQ: " << (err/iter) << std::endl;
                 iter = 0;
                 err = 0;
                 clerr = 0;
+                std::ofstream sn("my_net2");
+                net1.write(sn);
             }
 
             snet.backward(grad);

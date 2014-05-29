@@ -204,6 +204,11 @@ public:
         }
     }
 
+    vec3s fov()
+    {
+        return network_.fov();
+    }
+
 
 }; // class layered_network_data
 

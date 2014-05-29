@@ -12,7 +12,7 @@ private:
     std::size_t n_outputs_ = 0;
     std::vector<network_layer> layers_;
 
-private:
+public:
     template<typename Char, typename CharT>
     void read(std::basic_istream<Char,CharT>& in)
     {
@@ -125,6 +125,20 @@ public:
     bool operator!=(const layered_network& oth) const
     {
         return !(*this == oth);
+    }
+
+    void pop_layer()
+    {
+        layers_.pop_back();
+
+        if ( layers_.size() )
+        {
+            n_outputs_ = layers_.back().num_outputs();
+        }
+        else
+        {
+            n_outputs_ = n_inputs_;
+        }
     }
 
     void add_layer( std::size_t n_out,

@@ -38,8 +38,16 @@ inline vec3s size(const cube<T>& c)
 }
 
 template<typename T>
+inline void flip(cube<T>& c)
+{
+    std::reverse(c.memptr(), c.memptr() + c.n_elem);
+}
+
+template<typename T>
 inline void flip_dims(cube<T>& c)
 {
+    flip(c);
+    /*
     for ( size_t z = 0; z < c.n_slices/2; ++z )
         for ( size_t y = 0; y < c.n_cols; ++y )
             for ( size_t x = 0; x < c.n_rows; ++x )
@@ -62,8 +70,9 @@ inline void flip_dims(cube<T>& c)
                           c(c.n_rows-1-x,c.n_cols-1-y,c.n_slices-1-z));
         }
     }
-
+    */
 }
+
 
 template<typename T>
 inline void fill_indices(cube<T>& c)

@@ -2,6 +2,13 @@
 
 #include <fstream>
 #include <string>
+#include <functional>
+#include <memory>
+#include <vector>
+#include <mutex>
+#include <condition_variable>
+
+#include <zi/async.hpp>
 
 #include "../core/types.hpp"
 #include "../core/diskio.hpp"
@@ -50,21 +57,70 @@ private:
     vec3s       margin_sz_  ;
     vec3s       set_sz_     ;
 
-    double      w_pos_ = 0;
-    double      w_neg_ = 0;
+private:
+    sample                  next_sample_    ;
+    bool                    has_next_sample_ = false;
+    std::mutex              mutex_          ;
+    std::condition_variable cv_             ;
+
+    void prepare_sample()
+    {
+        guard g(mutex_);
+
+        ZI_ASSERT(!has_next_sample_);
+
+        while (1)
+        {
+            vec3s loc = vec3s(half_in_sz_[0] + (rand() % set_sz_[0]),
+                              half_in_sz_[1] + (rand() % set_sz_[1]),
+                              half_in_sz_[2] + (rand() % set_sz_[2]));
+
+            cube<char>  clabel = crop(label, loc - half_out_sz_, out_sz_ );
+
+            if ( clabel.max() < 1 ) continue;
+
+            cube<char>  cmask  = crop(mask , loc - half_out_sz_, out_sz_ );
+
+            if ( cmask.max() < 1 ) continue;
+
+            cube<float> fimage = crop(image, loc - half_in_sz_ , in_sz_ );
+
+            next_sample_= { cube_cast<double>(fimage),
+                            cube_cast<double>(clabel),
+                            std::move(cmask),
+                            w_pos,
+                            w_neg };
+
+            has_next_sample_ = true;
+            cv_.notify_one();
+            return;
+        }
+    }
+
 
 public:
-    explicit training_cube(const std::string& fname,
-                           const vec3s& in_sz,
-                           const vec3s& out_sz)
+    double      w_pos = 0;
+    double      w_neg = 0;
+
+    size_t      n_pos = 0;
+    size_t      n_neg = 0;
+
+public:
+    training_cube(const std::string& fname,
+                  const vec3s& in_sz,
+                  const vec3s& out_sz)
         : in_sz_(in_sz)
         , out_sz_(out_sz)
     {
+        std::cout << "Loading: " << fname << " ... " << std::flush;
+
         auto sizefn = fname + ".size";
         std::ifstream sizef(sizefn.c_str());
 
         zi::vl::vec<int,3> s;
         io::read(sizef, s);
+
+        std::cout << s;
 
         cube<double> tmp(s[0],s[1],s[2]);
 
@@ -99,9 +155,6 @@ public:
 
         set_sz_ = size_ - margin_sz_ - half_in_sz_;
 
-        size_t n_pos = 0;
-        size_t n_neg = 0;
-
         for ( size_t z = half_in_sz_[2]; z < half_in_sz_[2]+set_sz_[2]; ++z )
             for ( size_t y = half_in_sz_[1]; y < half_in_sz_[1]+set_sz_[1]; ++y )
                 for ( size_t x = half_in_sz_[0]; x < half_in_sz_[0]+set_sz_[0]; ++x )
@@ -109,44 +162,59 @@ public:
                     if ( mask(x,y,z) )
                     {
                         if ( label(x,y,z) )
-                        {
                             ++n_pos;
-                        }
                         else
-                        {
                             ++n_neg;
-                        }
                     }
                 }
 
-        w_pos_ = w_neg_ = n_pos + n_neg;
+        w_pos = w_neg = n_pos + n_neg;
 
-        w_pos_ /= 2 * n_pos;
-        w_neg_ /= 2 * n_neg;
+        w_pos /= 2 * n_pos;
+        w_neg /= 2 * n_neg;
 
+        zi::async::async(&training_cube::prepare_sample, this);
+
+        std::cout << " DONE" << std::endl;
     }
 
     sample get_sample()
     {
-        while (1)
+        guard g(mutex_);
+
+        while (!has_next_sample_)
         {
-            vec3s loc = vec3s(half_in_sz_[0] + (rand() % set_sz_[0]),
-                              half_in_sz_[1] + (rand() % set_sz_[1]),
-                              half_in_sz_[2] + (rand() % set_sz_[2]));
-
-            cube<char>  clabel = crop(label, loc - half_out_sz_, out_sz_ );
-
-            if ( clabel.max() < 1 ) continue;
-
-            cube<float> fimage = crop(image, loc - half_in_sz_ , in_sz_ );
-            cube<char>  cmask  = crop(mask , loc - half_out_sz_, out_sz_ );
-
-            return { cube_cast<double>(fimage),
-                    cube_cast<double>(clabel),
-                    std::move(cmask),
-                    w_pos_,
-                    w_neg_ };
+            cv_.wait(g);
         }
+
+        has_next_sample_ = false;
+        zi::async::async(&training_cube::prepare_sample, this);
+
+        return std::move(next_sample_);
+    }
+};
+
+class training_cubes
+{
+private:
+    std::vector<std::unique_ptr<training_cube>> cubes_;
+
+public:
+    training_cubes(const std::string& fname,
+                   const std::vector<size_t> nums,
+                   const vec3s& in_sz,
+                   const vec3s& out_sz)
+    {
+        for ( auto a: nums )
+        {
+            cubes_.emplace_back(
+                new training_cube(fname + std::to_string(a), in_sz, out_sz));
+        }
+    }
+
+    sample get_sample()
+    {
+        return cubes_[rand()%cubes_.size()]->get_sample();
     }
 };
 

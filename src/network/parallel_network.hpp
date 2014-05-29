@@ -20,6 +20,8 @@
 #include "../pooling/pooling_filter_2.hpp"
 
 
+// TODO: Fix transfer function hack
+
 namespace zi {
 namespace znn {
 
@@ -75,7 +77,12 @@ public:
         , transfer_fn_(net.transfer_function())
         , inputs_(data_.layer(layer_no).num_inputs())
         , outputs_(data_.layer(layer_no).num_outputs())
-    {}
+    {
+        // if ( layer_no_ == data_.num_layers() - 1 )
+        // {
+        //     transfer_fn_ = make_transfer_fn<sigmoid_for_logreg>();
+        // }
+    }
 
 private:
     void forward_filter(size_t i, size_t o)
@@ -323,7 +330,12 @@ public:
         , transfer_fn_(net.transfer_function())
         , inputs_(data_.layer(layer_no).num_inputs())
         , outputs_(data_.layer(layer_no).num_outputs())
-    {}
+    {
+        // if ( layer_no_ == data_.num_layers() - 1 )
+        // {
+        //     transfer_fn_ = make_transfer_fn<sigmoid_for_logreg>();
+        // }
+    }
 
 private:
     void forward_filter(size_t i, size_t o)
@@ -761,6 +773,10 @@ public:
         }
     }
 
+    vec3s fov()
+    {
+        return net_.fov();
+    }
 
 }; // class parallel_network
 

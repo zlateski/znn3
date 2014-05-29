@@ -446,10 +446,9 @@ public:
 
     vec< T, N >& operator/=( const T& rhs )
     {
-        T rinv = static_cast< T >( 1 ) / rhs;
         for ( size_type i = 0; i < N; ++i )
         {
-            d[ i ] *= rinv;
+            d[ i ] /= rhs;
         }
         return *this;
     }
