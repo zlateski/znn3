@@ -4,6 +4,7 @@
 #include <iostream>
 #include <stdexcept>
 #include <type_traits>
+#include <string>
 #include <cstdio>
 #include <zi/vl/vl.hpp>
 
@@ -58,7 +59,8 @@ inline void read_n(std::basic_istream<Char,CharT>& in, T* r, std::size_t n)
 }
 
 template<typename T, typename Char, typename CharT>
-inline void write_n(std::basic_ostream<Char,CharT>& out, const T* v, std::size_t n)
+inline void write_n(std::basic_ostream<Char,CharT>& out, const T* v,
+                    std::size_t n)
 {
     out.write(reinterpret_cast<const char*>(v), sizeof(T)*n);
 }
@@ -94,5 +96,43 @@ void write(std::basic_ostream<Char, CharT>& out, const cube<T>& c)
     write_n(out, c.memptr(), c.n_elem);
 }
 
+template<typename Char, typename CharT, typename T>
+void read(std::basic_istream<Char, CharT>& in, std::string& s)
+{
+    size_t size;
+    read(in, size);
+    s.resize(size);
+    read_n(in, const_cast<char*>(s.data()), size);
+}
+
+template<typename Char, typename CharT, typename T>
+void write(std::basic_ostream<Char, CharT>& out, const std::string& s)
+{
+    size_t size = s.size();
+    write(out, size);
+    write_n(out, s.data(), size);
+}
+
+namespace detail
+{
+
+struct istream_wrapper_type_erasure
+{
+    virtual ~istream_wrapper_type_erasure();
+    virtual void read(char*, size_t) = 0;
+};
+
+
+struct ostream_wrapper_type_erasure
+{
+    virtual ~ostream_wrapper_type_erasure();
+    virtual void write(const char*, size_t) = 0;
+    virtual operator bool() = 0;
+};
+
+
+
+
+} // namespace detail
 
 }}} // namespace zi::znn::io

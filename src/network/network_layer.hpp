@@ -144,6 +144,7 @@ public:
         {
             // todo: better rand generator;
             b = arma::arma_rng_cxx11_instance.randu_val() - 0.5;
+            b /= 10;
         }
 
         for ( std::size_t i = 0; i < n_inputs_; ++i )
@@ -157,6 +158,7 @@ public:
                                          filter_size_[2]);
                 filters_[i][j].randu();
                 filters_[i][j] -= 0.5;
+                filters_[i][j] /= 10;
             }
         }
     }

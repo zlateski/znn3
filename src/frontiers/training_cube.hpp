@@ -11,7 +11,11 @@
 #include <zi/async.hpp>
 
 #include "../core/types.hpp"
+#include "../core/cube_utils.hpp"
 #include "../core/diskio.hpp"
+#include "../core/waiter.hpp"
+
+#include "utility.hpp"
 
 namespace zi {
 namespace znn {
@@ -112,6 +116,8 @@ public:
         : in_sz_(in_sz)
         , out_sz_(out_sz)
     {
+        vec3s fov = in_sz - out_sz + vec3s::one;
+
         std::cout << "Loading: " << fname << " ... " << std::flush;
 
         auto sizefn = fname + ".size";
@@ -129,12 +135,14 @@ public:
         io::read(imagef, tmp);
 
         image = cube_cast<float>(tmp);
+        image = mirror_cube(image, fov);
 
         auto labelfn = fname + ".label";
         std::ifstream labelf(labelfn.c_str());
         io::read(labelf, tmp);
 
         label = cube_cast<char>(tmp);
+        label = mirror_cube(label, fov);
 
         mask.resize(s[0], s[1], s[2]);
 
@@ -142,7 +150,9 @@ public:
         std::ifstream maskf(maskfn.c_str());
         io::read(maskf, mask);
 
-        size_ = vec3s(s[0], s[1], s[2]);
+        mask = mirror_cube(mask, fov);
+
+        size_ = size(image);
 
         half_in_sz_  = in_sz_/vec3i(2,2,2);
         half_out_sz_ = out_sz_/vec3i(2,2,2);
@@ -198,6 +208,18 @@ class training_cubes
 {
 private:
     std::vector<std::unique_ptr<training_cube>> cubes_;
+
+// private:
+//     void load_training_cube( std::unique_ptr<training_cube>& tc,
+//                              std::string fname,
+//                              const vec3s& in_sz,
+//                              const vec3s& out_sz,
+//                              waiter& w)
+//     {
+//         unique_ptr<training_cube> t(new training_cube(fname, in_sz, out_sz));
+//         tc = std::move(t);
+//         w.one_done();
+//     }
 
 public:
     training_cubes(const std::string& fname,

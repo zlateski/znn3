@@ -111,7 +111,6 @@ void process_whole_cube( const std::string& ifname,
     std::vector<cube<double>> input(1);
 
     for ( std::size_t z = 0; z < os[2]; z += cube_width )
-    {
         for ( std::size_t y = 0; y < os[1]; y += cube_width )
             for ( std::size_t x = 0; x < os[0]; x += cube_width )
             {
@@ -121,13 +120,12 @@ void process_whole_cube( const std::string& ifname,
 
                 input[0] = c.subcube(x,y,z,xi+fov[0]-2,yi+fov[1]-2,zi+fov[2]-1);
 
-                std::cout << vec3s(x,y,z) << std::endl;
-
                 auto output = net.forward(input);
 
                 r.subcube(x,y,z,xi-1,yi-1,zi-1) = output[0];
+
+                std::cout << vec3s(x,y,z) << std::endl;
             }
-    }
 
     save_cube( ofname, r );
 

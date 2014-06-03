@@ -1,3 +1,7 @@
+#include "core/sum_of.hpp"
+
+#include "network/advanced/input_layer.hpp"
+
 #include <iostream>
 #include <thread>
 #include <sstream>
@@ -41,32 +45,80 @@ using namespace zi::znn;
 cube<double> images[60000];
 std::vector<cube<double>> labels[60000];
 
+sum_of<unique_cube<double>> summer;
+
+std::atomic<int> total;
+
+void do_one()
+{
+    auto x = pool<double>::get_unique(5,5,5);
+    x->randu();
+
+    if ( summer.add(x) )
+    {
+        x = summer.reset();
+        std::cout << ++total << std::endl;
+    }
+}
 
 int main()
 {
-    zi::async::set_concurrency(16);
 
+    std::string zikica = "zika zika zikica";
+
+    std::string pera;
+
+    std::stringstream ss;
+
+    io::write(ss, zikica);
+    io::read(ss, pera);
+
+    std::cout << pera;
+
+
+    return 0;
+
+    zi::async::set_concurrency(1);
+
+    total = 0;
+
+    summer.init(10);
+
+    for ( int i = 0; i < 1000; ++i )
     {
-        std::ifstream netf("frontiers_net");
+        zi::async::async(do_one);
+    }
+
+    sleep(1000);
+
+
+    if (1)
+    {
+        std::ifstream netf("my_netz");
 
         layered_network net1(netf); // 28
         layered_network_data nld(net1);
         parallel_network snet(nld, make_transfer_fn<sigmoid>());
 
-        frontiers::process_whole_cube("/data/home/zlateski/uygar/test/confocal12",
-                                      "12", snet, 64);
+        for ( int i = 1; i <= 86; ++i )
+        {
+            std::string ifname = "/data/home/zlateski/uygar/test/confocal" + std::to_string(i);
+            std::string ofname = "./test/" + std::to_string(i);
+
+            frontiers::process_whole_cube(ifname, ofname, snet, 100);
+        }
 
         return 0;
     }
 
-
+    if (1)
     {
 
         std::vector<size_t> cells{56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72};
 
         frontiers::training_cubes tc
             ("/data/home/zlateski/uygar/data_24Jan2014/confocal", cells,
-                                    vec3s(30,30,7), vec3s(18,18,3));
+                                    vec3s(34,34,7), vec3s(18,18,3));
 
         frontiers::sample s = tc.get_sample();
 
@@ -80,10 +132,11 @@ int main()
         // }
         // else
         {
-            net1.add_layer(25,vec3s(5,5,1),0.00001); // 13,13,5
-            net1.add_layer(25,vec3s(3,3,3),0.00001); // 9,9,5
-            net1.add_layer(25,vec3s(5,5,1),0.00001); // 7,7,3
-            net1.add_layer(1,vec3s(3,3,3),0.00001); // 3,3,3
+            net1.add_layer(15,vec3s(5,5,1),0.00001); // 13,13,5
+            net1.add_layer(15,vec3s(3,3,3),0.00001); // 9,9,5
+            net1.add_layer(15,vec3s(5,5,1),0.00001); // 7,7,3
+            net1.add_layer(15,vec3s(3,3,3),0.00001); // 3,3,3
+            net1.add_layer(1,vec3s(5,5,1),0.00001); // 7,7,3
         }
 
         layered_network_data nld(net1);
@@ -96,6 +149,7 @@ int main()
         while (1)
         {
             frontiers::sample s = tc.get_sample();
+            s.w_pos = s.w_neg = 1;
 
             std::vector<cube<double>> input;
             input.push_back(s.image);
@@ -124,7 +178,7 @@ int main()
                 iter = 0;
                 err = 0;
                 clerr = 0;
-                std::ofstream sn("my_net2");
+                std::ofstream sn("my_netz");
                 net1.write(sn);
             }
 

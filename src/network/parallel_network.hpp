@@ -293,7 +293,9 @@ private:
         size_t                received = 0   ;
         unique_cube<complex>  featuremap_fft ;
         unique_cube<complex>  grad_fft       ;
-        std::vector<unique_cube<complex>> w_fft;
+
+        std::vector<unique_cube<complex>> w_fft      ;
+        std::vector<vec3s>                w_fft_sizes;
     };
 
     struct output_perceptron_data
@@ -357,10 +359,9 @@ private:
 
         // Compute the filter's transform, in the case it's not already there
         // Or if the input size had changed.
-        // WARNING - there's edge cases where this comparison might not work!
 
-        // if ( (!iperc.w_fft[o]) ||
-        //      (size(*iperc.w_fft[o]) != fft_complex_size(*f) ) )
+        if ( (!iperc.w_fft[o]) ||
+             (size(*f) != iperc.w_fft_sizes[o] ) )
         {
             iperc.w_fft[o] =
                 fftw::forward_pad( data_.filter(layer_no_,i,o),
@@ -557,6 +558,12 @@ public:
         real_filter_size = (data_.filter_size(layer_no_) - vec3s::one)
             * sparse + vec3s::one;
 
+        for ( auto& a: inputs_ )
+        {
+            a.w_fft.clear();
+            a.w_fft_sizes.clear();
+        }
+
         network_.init_done(layer_no_, sparse * data_.pooling_size(layer_no_));
     }
 
@@ -577,6 +584,7 @@ public:
         // This will heep the cache or create empty pointers otherwise.
 
         inputs_[pno].w_fft.resize(outputs_.size());
+        inputs_[pno].w_fft_sizes.resize(outputs_.size());
 
         // Envoke a task for each of the perceptron' filters
 
@@ -739,6 +747,7 @@ public:
     void grad_update()
     {
         net_.apply_grads();
+        layers_[0]->init(vec3s::one);
     }
 
     void forward_done(size_t l, size_t p)

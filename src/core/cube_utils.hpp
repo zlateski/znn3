@@ -144,4 +144,15 @@ inline void pairwise_mult( cube<T>& a, const cube<T>& b )
         ap[i] *= bp[i];
 }
 
+template<typename T>
+inline void pairwise_div( cube<T>& a, const cube<T>& b )
+{
+    ZI_ASSERT(a.n_elem==b.n_elem);
+    T* ap = a.memptr();
+    const T* bp = b.memptr();
+
+    for ( size_t i = 0; i < a.n_elem; ++i )
+        ap[i] /= bp[i];
+}
+
 }} // namespace zi::znn
