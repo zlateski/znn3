@@ -19,8 +19,7 @@ public:
         : base_type(net, id, size)
     {}
 
-    template<typename Char, typename CharT>
-    input_layer(Net* net, std::basic_istream<Char,CharT>& in)
+    input_layer(Net* net, io::istream& in)
         : base_type(net, in)
     {}
 

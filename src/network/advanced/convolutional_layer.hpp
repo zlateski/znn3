@@ -2,8 +2,8 @@
 
 #include "layer.hpp"
 #include "../../core/cube_pool.hpp"
-#include "../../sum_of.hpp"
-#include "../transfer_fn.hpp"
+#include "../../core/sum_of.hpp"
+#include "../../transfer_fn/transfer_fn.hpp"
 
 namespace zi {
 namespace znn {
@@ -24,11 +24,15 @@ private:
     double      eta_;
     transfer_fn transfer_fn_;
 
+    std::vector<cube<double*>>               ifeatures_;
+    std::vector<sum_of<unique_cube<double>>> ofeatures_;
 
+    std::vector<double>                      dEdB_ ;
+    std::vector<sum_of<unique_cube<double>>> grads_;
+
+    std::vector<std::vector<unique_cube<double>>> dEdW_;
 
 public:
-    virtual ~simple_convolutional_layer() {}
-
     simple_convolutional_layer( Net* net,
                                 size_t id,
                                 size_t size,
@@ -42,7 +46,7 @@ public:
         , filters_(num_inputs)
         , biases_(size)
         , eta_(eta)
-        , transfer_fn_(transfer_fn)
+        , transfer_fn_(tf)
     {
         for ( auto& b: biases_ )
         {
@@ -67,10 +71,10 @@ public:
         }
     }
 
-    template<typename Char, typename CharT>
-    simple_convolutional_layer(Net* net, std::basic_istream<Char,CharT>& in)
+    simple_convolutional_layer(Net* net, io::istream& in)
         : base_type(net, in)
-    {}
+    {
+    }
 
     void init(const vec3s& s = vec3s::one) override
     {
@@ -85,6 +89,11 @@ public:
     void backward(size_t n, const cube<double>* c) override
     {
         base_type::net()->backward_done(base_type::id(), n, c);
+    }
+
+    std::string type() const override
+    {
+        return "simple_convolutional";
     }
 
 }; // class simple_convolutional_layer

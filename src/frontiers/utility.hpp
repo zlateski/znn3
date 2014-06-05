@@ -13,6 +13,55 @@ namespace frontiers {
 
 
 template<typename T>
+inline void flip_x_dim( cube<T>& c )
+{
+    cube<T> r = c;
+    for ( size_t x = 0; x < c.n_rows; ++x )
+    {
+        r(arma::span(x), arma::span::all, arma::span::all) =
+            c(arma::span(c.n_rows-1-x), arma::span::all, arma::span::all);
+    }
+    c = std::move(r);
+}
+
+template<typename T>
+inline void flip_y_dim( cube<T>& c )
+{
+    cube<T> r = c;
+    for ( size_t y = 0; y < c.n_cols; ++y )
+    {
+        r(arma::span::all, arma::span(y), arma::span::all) =
+            c(arma::span::all, arma::span(c.n_cols-1-y), arma::span::all);
+    }
+    c = std::move(r);
+}
+
+template<typename T>
+inline void flip_z_dim( cube<T>& c )
+{
+    cube<T> r = c;
+    for ( size_t z = 0; z < c.n_slices; ++z )
+    {
+        r.slice(z) = c.slice(c.n_slices-1-z);
+    }
+    c = std::move(r);
+}
+
+template<typename T>
+inline void rotate_xy( cube<T>& c )
+{
+    cube<T> r = c;
+    for ( size_t z = 0; z < c.n_slices; ++z )
+        for ( size_t y = 0; y < c.n_cols; ++y )
+            for ( size_t x = 0; x < c.n_rows; ++x )
+                r(x,y,z) = c(c.n_rows-1-y,x,z);
+
+    c = std::move(r);
+}
+
+
+
+template<typename T>
 cube<T> mirror_cube( const cube<T>& c, const vec3s& fov)
 {
     cube<T> r(c.n_rows+fov[0]-1, c.n_cols+fov[1]-1, c.n_slices+fov[2]-1);
@@ -98,7 +147,8 @@ template<typename N>
 void process_whole_cube( const std::string& ifname,
                          const std::string& ofname,
                          N& net,
-                         size_t cube_width = 32)
+                         size_t cube_width = 32,
+                         bool cross_entropy = true)
 {
     auto c = load_cube<double>(ifname);
     auto r = c;
@@ -121,6 +171,12 @@ void process_whole_cube( const std::string& ifname,
                 input[0] = c.subcube(x,y,z,xi+fov[0]-2,yi+fov[1]-2,zi+fov[2]-1);
 
                 auto output = net.forward(input);
+
+                if ( cross_entropy )
+                {
+                    output[1] += output[0];
+                    pairwise_div( output[0], output[1] );
+                }
 
                 r.subcube(x,y,z,xi-1,yi-1,zi-1) = output[0];
 

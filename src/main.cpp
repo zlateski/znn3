@@ -1,7 +1,9 @@
 #include "core/sum_of.hpp"
 
 #include "network/advanced/input_layer.hpp"
+#include "network/advanced/convolutional_layer.hpp"
 
+#include <future>
 #include <iostream>
 #include <thread>
 #include <sstream>
@@ -13,6 +15,7 @@
 //#include "core/fft.hpp"
 #include "frontiers/training_cube.hpp"
 #include "frontiers/square_loss.hpp"
+#include "frontiers/cross_entropy_loss.hpp"
 #include "frontiers/utility.hpp"
 
 #include "pooling/pooling_filter_2.hpp"
@@ -56,56 +59,59 @@ void do_one()
 
     if ( summer.add(x) )
     {
-        x = summer.reset();
         std::cout << ++total << std::endl;
     }
+}
+
+void do_something1()
+{
+    std::cout << "do_something()" << std::endl;
+}
+
+void do_something2(int i)
+{
+    std::cout << "do_something(" << i << ")" << std::endl;
+}
+
+
+void do_something3( std::unique_ptr<int> i )
+{
+    std::cout << "do_something3(" << *i << ")" << std::endl;
 }
 
 int main()
 {
 
-    std::string zikica = "zika zika zikica";
+//zi::async::set_concurrency(1);
 
-    std::string pera;
+    // total = 0;
 
-    std::stringstream ss;
+    // summer.init(10);
 
-    io::write(ss, zikica);
-    io::read(ss, pera);
+    // for ( int i = 0; i < 1000; ++i )
+    // {
+    //     zi::async::async(do_one);
+    // }
 
-    std::cout << pera;
+    // //sleep(1000);
 
 
-    return 0;
-
-    zi::async::set_concurrency(1);
-
-    total = 0;
-
-    summer.init(10);
-
-    for ( int i = 0; i < 1000; ++i )
+    if (0)
     {
-        zi::async::async(do_one);
-    }
-
-    sleep(1000);
-
-
-    if (1)
-    {
-        std::ifstream netf("my_netz");
+        std::ifstream netf("my_netqq");
 
         layered_network net1(netf); // 28
         layered_network_data nld(net1);
         parallel_network snet(nld, make_transfer_fn<sigmoid>());
 
-        for ( int i = 1; i <= 86; ++i )
+        for ( int i = 56; i <= 56; ++i )
         {
-            std::string ifname = "/data/home/zlateski/uygar/test/confocal" + std::to_string(i);
+            //std::string ifname = "/data/home/zlateski/uygar/test/confocal" + std::to_string(i);
+            std::string ifname = "/data/home/zlateski/uygar/data_24Jan2014/confocal" + std::to_string(i);
+
             std::string ofname = "./test/" + std::to_string(i);
 
-            frontiers::process_whole_cube(ifname, ofname, snet, 100);
+            frontiers::process_whole_cube(ifname, ofname, snet, 100, false);
         }
 
         return 0;
@@ -118,7 +124,7 @@ int main()
 
         frontiers::training_cubes tc
             ("/data/home/zlateski/uygar/data_24Jan2014/confocal", cells,
-                                    vec3s(34,34,7), vec3s(18,18,3));
+             vec3s(19,19,1), vec3s(11,11,1));
 
         frontiers::sample s = tc.get_sample();
 
@@ -132,15 +138,16 @@ int main()
         // }
         // else
         {
-            net1.add_layer(15,vec3s(5,5,1),0.00001); // 13,13,5
-            net1.add_layer(15,vec3s(3,3,3),0.00001); // 9,9,5
-            net1.add_layer(15,vec3s(5,5,1),0.00001); // 7,7,3
-            net1.add_layer(15,vec3s(3,3,3),0.00001); // 3,3,3
-            net1.add_layer(1,vec3s(5,5,1),0.00001); // 7,7,3
+            net1.add_layer(8,vec3s(5,5,1),0.0001);
+            //net1.add_layer(8,vec3s(3,3,3),0.001);
+            net1.add_layer(8,vec3s(5,5,1),0.0001);
+            // net1.add_layer(15,vec3s(3,3,3),0.0001);
+            // net1.add_layer(15,vec3s(5,5,1),0.0001);
+            net1.add_layer(1,vec3s(1,1,1),0.0001);
         }
 
         layered_network_data nld(net1);
-        parallel_network snet(nld, make_transfer_fn<sigmoid>());
+        parallel_network snet(nld, make_transfer_fn<hyperbolic_tangent>());
 
         double clerr= 0;
         double err  = 0;
@@ -149,7 +156,7 @@ int main()
         while (1)
         {
             frontiers::sample s = tc.get_sample();
-            s.w_pos = s.w_neg = 1;
+            //s.w_pos = s.w_neg = 1;
 
             std::vector<cube<double>> input;
             input.push_back(s.image);
@@ -165,20 +172,21 @@ int main()
 
 
             grad[0] = std::move(std::get<3>(x));
+            //grad[1] = std::move(std::get<4>(x));
 
             iter += std::get<0>(x);
             err  += std::get<1>(x);
             clerr+= std::get<2>(x);
 
 
-            if ( iter > 100000 )
+            if ( iter > 500000 )
             {
                 std::cout << "CL: " << (clerr/iter) << std::endl;
                 std::cout << "SQ: " << (err/iter) << std::endl;
                 iter = 0;
                 err = 0;
                 clerr = 0;
-                std::ofstream sn("my_netz");
+                std::ofstream sn("my_netqq");
                 net1.write(sn);
             }
 

@@ -6,29 +6,46 @@ namespace zi {
 namespace znn {
 
 template< class U >
-class sum_of
+class sum_of: public U
 {
 private:
     size_t     total_ = 0;
     size_t     sofar_ = 0;
     std::mutex mutex_;
-    U          sum_  ;
 
 public:
     sum_of()
+        : U()
     {}
 
     explicit sum_of(size_t n)
-        : total_(n)
+        : U()
+        , total_(n)
         , sofar_(0)
     {}
+
+    sum_of(sum_of&& oth)
+        : U(std::move(oth))
+        , total_(oth.total_)
+        , sofar_(oth.sofar_)
+        , mutex_(std::move(oth.mutex_))
+    {}
+
+    sum_of& operator=(sum_of&& oth)
+    {
+        U::operator=(std::move(oth));
+        total_ = oth.total_;
+        sofar_ = oth.sofar_;
+        mutex_ = std::move(oth.mutex_);
+        return *this;
+    }
 
     void init(size_t n)
     {
         guard g(mutex_);
         total_ = n;
         sofar_ = 0;
-        sum_.reset();
+        U::reset();
     }
 
     bool add(U& v)
@@ -42,31 +59,41 @@ public:
                 if ( sofar_ == 0 )
                 {
                     ++sofar_;
-                    sum_ = std::move(v);
-                    return sofar_ == total_;
+                    U::operator=(std::move(v));
+                    if ( sofar_ == total_ )
+                    {
+                        sofar_ = 0;
+                        return true;
+                    }
+                    else
+                    {
+                        return false;
+                    }
                 }
                 else
                 {
-                    if ( sum_ )
+                    if ( U::operator bool() )
                     {
-                        old = std::move(sum_);
+                        old = std::move(*this);
                     }
                     else
                     {
                         ++sofar_;
-                        sum_ = std::move(v);
-                        return sofar_ == total_;
+                        U::operator=(std::move(v));
+                        if ( sofar_ == total_ )
+                        {
+                            sofar_ = 0;
+                            return true;
+                        }
+                        else
+                        {
+                            return false;
+                        }
                     }
                 }
             }
             *v += *old;
         }
-    }
-
-    U reset()
-    {
-        sofar_ = 0;
-        return std::move(sum_);
     }
 
 }; // class sum_of

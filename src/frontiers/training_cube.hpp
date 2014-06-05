@@ -89,6 +89,32 @@ private:
 
             cube<float> fimage = crop(image, loc - half_in_sz_ , in_sz_ );
 
+            // TEMP
+            //cmask.fill(1);
+
+            if ( rand() % 2 )
+            {
+                flip_x_dim(clabel); flip_x_dim(cmask); flip_x_dim(fimage);
+            }
+
+            if ( rand() % 2 )
+            {
+                flip_y_dim(clabel); flip_y_dim(cmask); flip_y_dim(fimage);
+            }
+
+            if ( rand() % 2 )
+            {
+                flip_z_dim(clabel); flip_z_dim(cmask); flip_z_dim(fimage);
+            }
+
+            if ( cmask.n_rows == cmask.n_cols )
+            {
+                if ( rand() % 2 )
+                {
+                    rotate_xy(clabel); rotate_xy(cmask); rotate_xy(fimage);
+                }
+            }
+
             next_sample_= { cube_cast<double>(fimage),
                             cube_cast<double>(clabel),
                             std::move(cmask),

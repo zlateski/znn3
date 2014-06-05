@@ -20,21 +20,17 @@ protected:
 
     std::vector<unique_cube<double>> feature_maps_;
 
-    template<typename Char, typename CharT>
-    void write(std::basic_ostream<Char,CharT>& out)
+    virtual void write(io::ostream& out) const
     {
-        io::write(out, id_);
-        io::write(out, size_);
+        out << id_ << size_;
     }
 
 public:
 
-    template<typename Char, typename CharT>
-    layer(Net* net, std::basic_istream<Char,CharT>& in)
+    layer(Net* net, io::istream& in)
         : net_(net)
     {
-        io::read(in, id_);
-        io::read(in, size_);
+        in >> id_ >> size_;
         feature_maps_.resize(size_);
     }
 

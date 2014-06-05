@@ -27,49 +27,68 @@ inline std::tuple<size_t, double, double, cube<double>, cube<double>>
     cube<double> bgrad = ap;
 
     size_t n_samples = 0;
-    double lg_err = 0;
-    double cl_err = 0;
 
-    for ( size_t z = 0; z < grad.n_slices; ++z )
-        for ( size_t y = 0; y < grad.n_cols; ++y )
-            for ( size_t x = 0; x < grad.n_rows; ++x )
+    double tot_p_err = 0;
+    double tot_n_err = 0;
+    double cls_p_err = 0;
+    double cls_n_err = 0;
+
+    size_t w_pos = 0;
+    size_t w_neg = 0;
+
+    for ( size_t z = 0; z < a.n_slices; ++z )
+        for ( size_t y = 0; y < a.n_cols; ++y )
+            for ( size_t x = 0; x < a.n_rows; ++x )
             {
                 if ( s.mask(x,y,z) )
                 {
                     ++n_samples;
 
-                    agrad(x,y,z) = a(x,y,z) - s.label(x,y,z);
-                    bgrad(x,y,z) = b(x,y,z) - 1 + s.label(x,y,z);
+                    agrad(x,y,z) = ap(x,y,z) - s.label(x,y,z);
+                    bgrad(x,y,z) = bp(x,y,z) - 1 + s.label(x,y,z);
 
-                    lg_err -= s.label(x,y,z) * std::log(a(x,y,z));
-                    lg_err -= (static_cast<double>(1) - s.label(x,y,z))
-                        * std::log(b(x,y,z));
+                    tot_p_err -= s.label(x,y,z) * std::log(ap(x,y,z));
+                    tot_n_err -= (static_cast<double>(1) - s.label(x,y,z))
+                        * std::log(bp(x,y,z));
 
-                    if ( s.label(x,y,z) )
+                    if ( s.label(x,y,z) > 0.5 )
                     {
-                        grad(x,y,z) *= s.w_pos;
-                        double e = prop(x,y,z) - s.label(x,y,z);
-                        sq_err += e*e*s.w_pos;
-                        if ( prop(x,y,z) < 0.5 )
-                            cl_err += s.w_pos;
+                        ++w_pos;
+                        if ( ap(x,y,z) < bp(x,y,z) )
+                            ++cls_p_err;
                     }
                     else
                     {
-                        grad(x,y,z) *= s.w_neg;
-                        double e = prop(x,y,z) - s.label(x,y,z);
-                        sq_err += e*e*s.w_neg;
-                        if ( prop(x,y,z) >= 0.5 )
-                            cl_err += s.w_neg;
+                        ++w_neg;
+                        if ( ap(x,y,z) >= bp(x,y,z) )
+                            ++cls_n_err;
                     }
                 }
                 else
                 {
-                    grad(x,y,z) = 0;
+                    agrad(x,y,z) = bgrad(x,y,z) = 0;
                 }
             }
 
-    return std::tuple<size_t, double, double, cube<double>>
-    { n_samples, sq_err, cl_err, std::move(grad) };
+    if ( w_pos )
+    {
+        agrad /= w_pos;
+        tot_p_err /= w_pos;
+        //cls_p_err /= w_pos;
+    }
+
+    if ( w_neg )
+    {
+        bgrad /= w_neg;
+        tot_n_err /= w_neg;
+        //cls_n_err /= w_neg;
+    }
+
+    return std::tuple<size_t, double, double, cube<double>, cube<double>>
+    { n_samples,
+            (tot_p_err + tot_n_err) * n_samples,
+            (cls_p_err + cls_n_err), // * n_samples,
+            std::move(agrad), std::move(bgrad) };
 }
 
 }}} // namespace zi::znn::frontiers

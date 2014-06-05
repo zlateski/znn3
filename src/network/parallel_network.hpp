@@ -366,6 +366,7 @@ private:
             iperc.w_fft[o] =
                 fftw::forward_pad( data_.filter(layer_no_,i,o),
                                    sparsness, size(*f) );
+            iperc.w_fft_sizes[o] = size(*f);
         }
 
         // Convolve (pairwise multiplication of the fft transforms)
@@ -694,7 +695,7 @@ public:
             // if ( i % 2 )
             //     layers_[i] = layer_ptr(new direct_layer_type(*this, i));
             // else
-                layers_[i] = layer_ptr(new fft_layer_type(*this, i));
+            layers_[i] = layer_ptr(new fft_layer_type(*this, i));
         }
         layers_[0]->init(vec3s::one);
     }
