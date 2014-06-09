@@ -174,6 +174,8 @@ void process_whole_cube( const std::string& ifname,
 
                 if ( cross_entropy )
                 {
+                    output[0] = exp(output[0]);
+                    output[1] = exp(output[1]);
                     output[1] += output[0];
                     pairwise_div( output[0], output[1] );
                 }

@@ -40,54 +40,55 @@ inline std::tuple<size_t, double, double, cube<double>, cube<double>>
         for ( size_t y = 0; y < a.n_cols; ++y )
             for ( size_t x = 0; x < a.n_rows; ++x )
             {
+                agrad(x,y,z) = bgrad(x,y,z) = 0;
+
                 if ( s.mask(x,y,z) )
                 {
                     ++n_samples;
 
-                    agrad(x,y,z) = ap(x,y,z) - s.label(x,y,z);
-                    bgrad(x,y,z) = bp(x,y,z) - 1 + s.label(x,y,z);
-
-                    tot_p_err -= s.label(x,y,z) * std::log(ap(x,y,z));
-                    tot_n_err -= (static_cast<double>(1) - s.label(x,y,z))
-                        * std::log(bp(x,y,z));
-
                     if ( s.label(x,y,z) > 0.5 )
                     {
                         ++w_pos;
+                        agrad(x,y,z) = ap(x,y,z) - 1;
+
+                        tot_p_err -= std::log(ap(x,y,z));
+
                         if ( ap(x,y,z) < bp(x,y,z) )
                             ++cls_p_err;
                     }
                     else
                     {
                         ++w_neg;
+                        bgrad(x,y,z) = bp(x,y,z) - 1;
+
+                        tot_n_err -= std::log(bp(x,y,z));
+
                         if ( ap(x,y,z) >= bp(x,y,z) )
                             ++cls_n_err;
                     }
-                }
-                else
-                {
-                    agrad(x,y,z) = bgrad(x,y,z) = 0;
                 }
             }
 
     if ( w_pos )
     {
+        agrad *= static_cast<double>(n_samples)/2;
         agrad /= w_pos;
         tot_p_err /= w_pos;
-        //cls_p_err /= w_pos;
+        cls_p_err /= w_pos;
     }
 
     if ( w_neg )
     {
+        bgrad *= static_cast<double>(n_samples)/2;
         bgrad /= w_neg;
         tot_n_err /= w_neg;
-        //cls_n_err /= w_neg;
+        cls_n_err /= w_neg;
     }
 
     return std::tuple<size_t, double, double, cube<double>, cube<double>>
     { n_samples,
-            (tot_p_err + tot_n_err) * n_samples,
-            (cls_p_err + cls_n_err), // * n_samples,
+            (tot_p_err + tot_n_err) * n_samples / 2,
+            (cls_p_err + cls_n_err) * n_samples / 2,
             std::move(agrad), std::move(bgrad) };
 }
 

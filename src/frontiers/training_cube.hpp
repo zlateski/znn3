@@ -67,6 +67,8 @@ private:
     std::mutex              mutex_          ;
     std::condition_variable cv_             ;
 
+    bool                    next_sample_pos_ = false;
+
     void prepare_sample()
     {
         guard g(mutex_);
@@ -79,13 +81,25 @@ private:
                               half_in_sz_[1] + (rand() % set_sz_[1]),
                               half_in_sz_[2] + (rand() % set_sz_[2]));
 
-            cube<char>  clabel = crop(label, loc - half_out_sz_, out_sz_ );
-
-            if ( clabel.max() < 1 ) continue;
-
             cube<char>  cmask  = crop(mask , loc - half_out_sz_, out_sz_ );
 
             if ( cmask.max() < 1 ) continue;
+
+            cube<char>  clabel = crop(label, loc - half_out_sz_, out_sz_ );
+
+            if ( next_sample_pos_ )
+            {
+                if ( clabel.max() < 1 ) continue;
+            }
+            else
+            {
+                if ( out_sz_ == vec3s::one )
+                {
+                    if ( clabel(0,0,0) > 0.5 ) continue;
+                }
+            }
+
+            next_sample_pos_ = !next_sample_pos_;
 
             cube<float> fimage = crop(image, loc - half_in_sz_ , in_sz_ );
 

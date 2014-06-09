@@ -81,7 +81,7 @@ inline std::tuple<size_t, double, double, cube<double>>
     pairwise_mult(negw, grad);
 
     grad = posw + negw;
-    grad *= static_cast<double>(n_samples)/2;
+    //grad *= static_cast<double>(n_samples)/2;
 
     return std::tuple<size_t, double, double, cube<double>>
     { n_samples,

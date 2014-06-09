@@ -82,7 +82,7 @@ void do_something3( std::unique_ptr<int> i )
 int main()
 {
 
-//zi::async::set_concurrency(1);
+    //zi::async::set_concurrency(12);
 
     // total = 0;
 
@@ -98,7 +98,7 @@ int main()
 
     if (0)
     {
-        std::ifstream netf("my_netqq");
+        std::ifstream netf("frontiers_sigmoid_2_hidden_layers");
 
         layered_network net1(netf); // 28
         layered_network_data nld(net1);
@@ -120,38 +120,49 @@ int main()
     if (1)
     {
 
+
+        layered_network net1(1); // 28
+
+        // std::ifstream sn("frontiers_sigmoid_2_hidden_layers");
+        // if ( sn )
+        // {
+        //     net1.read(sn);
+        //     net1.pop_layer();
+        //     net1.add_layer(16,vec3s(3,3,3),0.1);
+        //     net1.add_layer(1,vec3s(1,1,1),0.01);
+        // }
+        // else
+        {
+            net1.add_layer(16,vec3s(5,5,1),0.1);
+            net1.add_layer(16,vec3s(5,5,1),0.1);
+            // net1.add_layer(16,vec3s(5,5,1),0.1);
+            // net1.add_layer(16,vec3s(3,3,3),0.1);
+
+            net1.add_layer(1,vec3s(1,1,1),0.01);
+        }
+
+        std::cout << net1.fov() << std::endl;
+        //return 0;
+
+
         std::vector<size_t> cells{56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72};
 
+        vec3s output_size(1,1,1);
+
         frontiers::training_cubes tc
-            ("/data/home/zlateski/uygar/data_24Jan2014/confocal", cells,
-             vec3s(19,19,1), vec3s(11,11,1));
+            ("/data/home/zlateski/uygar/data_09Jun2014/confocal", cells,
+             net1.fov() + output_size - vec3s::one, output_size);
 
         frontiers::sample s = tc.get_sample();
 
 
-        layered_network net1(1); // 28
-
-        std::ifstream sn("my_net2");
-        // if ( sn )
-        // {
-        //     net1.read(sn);
-        // }
-        // else
-        {
-            net1.add_layer(8,vec3s(5,5,1),0.0001);
-            //net1.add_layer(8,vec3s(3,3,3),0.001);
-            net1.add_layer(8,vec3s(5,5,1),0.0001);
-            // net1.add_layer(15,vec3s(3,3,3),0.0001);
-            // net1.add_layer(15,vec3s(5,5,1),0.0001);
-            net1.add_layer(1,vec3s(1,1,1),0.0001);
-        }
-
         layered_network_data nld(net1);
-        parallel_network snet(nld, make_transfer_fn<hyperbolic_tangent>());
+        parallel_network snet(nld, make_transfer_fn<sigmoid>());
 
         double clerr= 0;
         double err  = 0;
         int    iter = 0;
+        int    totiter = 0;
 
         while (1)
         {
@@ -179,20 +190,23 @@ int main()
             clerr+= std::get<2>(x);
 
 
-            if ( iter > 500000 )
+            totiter += std::get<0>(x);
+
+            if ( iter > 10000 )
             {
                 std::cout << "CL: " << (clerr/iter) << std::endl;
                 std::cout << "SQ: " << (err/iter) << std::endl;
                 iter = 0;
                 err = 0;
                 clerr = 0;
-                std::ofstream sn("my_netqq");
+                std::ofstream sn("frontiers_sigmoid_2_hidden_layers_data_09Jun");
                 net1.write(sn);
             }
 
             snet.backward(grad);
             snet.grad_update();
 
+            if ( totiter > 10000000 ) return 0;
 
             //std::cout << guess[0] << "\n";
         }
