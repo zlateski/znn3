@@ -6,6 +6,7 @@
 #include <type_traits>
 #include <string>
 #include <cstdio>
+#include <vector>
 #include <zi/vl/vl.hpp>
 
 #include "types.hpp"
@@ -96,7 +97,7 @@ void write(std::basic_ostream<Char, CharT>& out, const cube<T>& c)
     write_n(out, c.memptr(), c.n_elem);
 }
 
-template<typename Char, typename CharT, typename T>
+template<typename Char, typename CharT>
 void read(std::basic_istream<Char, CharT>& in, std::string& s)
 {
     size_t size;
@@ -105,13 +106,31 @@ void read(std::basic_istream<Char, CharT>& in, std::string& s)
     read_n(in, const_cast<char*>(s.data()), size);
 }
 
-template<typename Char, typename CharT, typename T>
+template<typename Char, typename CharT>
 void write(std::basic_ostream<Char, CharT>& out, const std::string& s)
 {
     size_t size = s.size();
     write(out, size);
     write_n(out, s.data(), size);
 }
+
+template<typename Char, typename CharT, typename T>
+void read(std::basic_istream<Char, CharT>& in, std::vector<T>& v)
+{
+    size_t size;
+    read(in, size);
+    v.resize(size);
+    read_n(in, v.data(), size);
+}
+
+template<typename Char, typename CharT, typename T>
+void write(std::basic_ostream<Char, CharT>& out, const std::vector<T>& v)
+{
+     size_t size = v.size();
+     write(out, size);
+     write_n(out, v.data(), size);
+}
+
 
 namespace detail
 {
@@ -245,6 +264,16 @@ public:
         return *this;
     }
 
+    template< typename T >
+    istream& operator>>( std::vector<T>& v )
+    {
+        size_t sz;
+        *this >> sz;
+        v.resize(sz);
+        read_n(v.data(), sz);
+        return *this;
+    }
+
     template<typename T, std::size_t N>
     istream& operator>>( zi::vl::vec<T,N>& v )
     {
@@ -323,6 +352,15 @@ public:
         size_t sz = s.size();
         *this << sz;
         write(s.data(), sz);
+        return *this;
+    }
+
+    template< typename T >
+    ostream& operator<<( const std::vector<T>& v )
+    {
+        size_t sz = v.size();
+        *this << sz;
+        write_n(v.data(), sz);
         return *this;
     }
 
