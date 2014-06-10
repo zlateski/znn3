@@ -13,6 +13,7 @@
 #include <zi/time.hpp>
 
 //#include "core/fft.hpp"
+#include "frontiers/simple_pixel/simple3d.hpp"
 #include "frontiers/training_cube.hpp"
 #include "frontiers/square_loss.hpp"
 #include "frontiers/cross_entropy_loss.hpp"
@@ -49,17 +50,26 @@ using namespace zi::znn;
 int main()
 {
 
-    //zi::async::set_concurrency(5);
+    //zi::async::set_concurrency(8);
+
+    // int p[] = { 1,1,0,1,1,0,0,0,0,
+    //             1,1,0,0,0,0,0,0,0,
+    //             0,0,0,0,0,0,0,0,0 };
+
+    // std::cout << "IS SIMPLE: " << frontiers::is_simple(p) << std::endl;
+
+
+    // return 0;
 
     if (1)
     {
-        std::ifstream netf("frontiers_sigmoid_2_hidden_layers_data_09Jun");
+        std::ifstream netf("frontiers_sigmoid_3_hidden_layers_data_09Jun2");
 
         layered_network net1(netf); // 28
         layered_network_data nld(net1);
         parallel_network snet(nld, make_transfer_fn<sigmoid>());
 
-        for ( int i = 12; i <= 12; ++i )
+        for ( int i = 13; i <= 40; ++i )
         {
             std::string ifname = "/data/home/zlateski/uygar/test/confocal" + std::to_string(i);
             //std::string ifname = "/data/home/zlateski/uygar/data_09Jun2014/confocal" + std::to_string(i);
@@ -78,13 +88,15 @@ int main()
 
         layered_network net1(1); // 28
 
-        std::ifstream sn("frontiers_sigmoid_2_hidden_layers_data_09Jun");
+        std::ifstream sn("frontiers_sigmoid_3_hidden_layers_data_09Jun2");
         if ( sn )
         {
             net1.read(sn);
+            // net1.layer(0).learning_rate() = 0.05;
+            // net1.layer(1).learning_rate() = 0.05;
             net1.pop_layer();
-            net1.add_layer(16,vec3s(3,3,3),0.1);
-            net1.add_layer(1,vec3s(1,1,1),0.01);
+            net1.add_layer(16,vec3s(5,5,1),0.05);
+            net1.add_layer(1,vec3s(1,1,1),0.005);
         }
         else
         {
@@ -108,7 +120,7 @@ int main()
 
 
         frontiers::reporter reporter
-            ("frontiers_sigmoid_3_hidden_layers_data_09Jun.report", 10000);
+            ("frontiers_sigmoid_4_hidden_layers_data_09Jun.report", 10000);
         reporter.clear();
 
         size_t niter = reporter.total_iterations();
@@ -131,7 +143,7 @@ int main()
             if ( reporter.report(std::get<2>(x), std::get<1>(x),
                                  std::get<0>(x)) )
             {
-                std::ofstream sn("frontiers_sigmoid_3_hidden_layers_data_09Jun");
+                std::ofstream sn("frontiers_sigmoid_4_hidden_layers_data_09Jun");
                 net1.write(sn);
             }
 
@@ -142,7 +154,7 @@ int main()
         }
 
         {
-            std::ofstream sn("frontiers_sigmoid_3_hidden_layers_data_09Jun");
+            std::ofstream sn("frontiers_sigmoid_4_hidden_layers_data_09Jun");
             net1.write(sn);
             reporter.force_save();
         }
