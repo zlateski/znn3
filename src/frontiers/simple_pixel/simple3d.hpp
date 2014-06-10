@@ -1,5 +1,7 @@
 #pragma once
 
+#include "../../core/types.hpp"
+
 namespace zi {
 namespace znn {
 namespace frontiers {
@@ -7,23 +9,23 @@ namespace frontiers {
 inline void visit_6_helper( cube<int>& c, int x, int y, int z )
 {
     c(x,y,z) = 0;
-    if ( (x>0) && c(x-1,y,z) ) visit_6_helper(x-1,y,z);
-    if ( (y>0) && c(x,y-1,z) ) visit_6_helper(x,y-1,z);
-    if ( (z>0) && c(x,y,z-1) ) visit_6_helper(x,y,z-1);
-    if ( (x<2) && c(x+1,y,z) ) visit_6_helper(x+1,y,z);
-    if ( (y<2) && c(x,y+1,z) ) visit_6_helper(x,y+1,z);
-    if ( (z<2) && c(x,y,z+1) ) visit_6_helper(x,y,z+1);
+    if ( (x>0) && c(x-1,y,z) ) visit_6_helper(c,x-1,y,z);
+    if ( (y>0) && c(x,y-1,z) ) visit_6_helper(c,x,y-1,z);
+    if ( (z>0) && c(x,y,z-1) ) visit_6_helper(c,x,y,z-1);
+    if ( (x<2) && c(x+1,y,z) ) visit_6_helper(c,x+1,y,z);
+    if ( (y<2) && c(x,y+1,z) ) visit_6_helper(c,x,y+1,z);
+    if ( (z<2) && c(x,y,z+1) ) visit_6_helper(c,x,y,z+1);
 }
 
 inline void visit_6_inv_helper( cube<int>& c, int x, int y, int z )
 {
     c(x,y,z) = 1;
-    if ( (x>0) && !c(x-1,y,z) ) visit_6_helper(x-1,y,z);
-    if ( (y>0) && !c(x,y-1,z) ) visit_6_helper(x,y-1,z);
-    if ( (z>0) && !c(x,y,z-1) ) visit_6_helper(x,y,z-1);
-    if ( (x<2) && !c(x+1,y,z) ) visit_6_helper(x+1,y,z);
-    if ( (y<2) && !c(x,y+1,z) ) visit_6_helper(x,y+1,z);
-    if ( (z<2) && !c(x,y,z+1) ) visit_6_helper(x,y,z+1);
+    if ( (x>0) && !c(x-1,y,z) ) visit_6_helper(c,x-1,y,z);
+    if ( (y>0) && !c(x,y-1,z) ) visit_6_helper(c,x,y-1,z);
+    if ( (z>0) && !c(x,y,z-1) ) visit_6_helper(c,x,y,z-1);
+    if ( (x<2) && !c(x+1,y,z) ) visit_6_helper(c,x+1,y,z);
+    if ( (y<2) && !c(x,y+1,z) ) visit_6_helper(c,x,y+1,z);
+    if ( (z<2) && !c(x,y,z+1) ) visit_6_helper(c,x,y,z+1);
 }
 
 inline void visit_26_helper( cube<int>& c, int x, int y, int z )
@@ -50,8 +52,6 @@ inline void visit_26_inv_helper( cube<int>& c, int x, int y, int z )
                 visit_26_helper(c, x+i, y+j, z+k);
 }
 
-
-inline void
 
 inline bool is_simple(int* b)
 {
